@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>TeleDrive - Telegram Cloud Drive</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/latin.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0e1a;
+      --bg-2: #0f1424;
+      --card: rgba(22, 28, 45, 0.65);
+      --card-solid: #161c2d;
+      --primary: #0a84ff;
+      --primary-2: #5e5ce6;
+      --accent: #64d2ff;
+      --success: #30d158;
+      --danger: #ff453a;
+      --warning: #ffd60a;
+      --text: #f5f5f7;
+      --text-secondary: #8e8e93;
+      --text-tertiary: #636366;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.14);
+      --hover: rgba(255, 255, 255, 0.05);
+      --sidebar-bg: rgba(15, 20, 32, 0.72);
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 22px;
+      --radius-xl: 28px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.25);
+      --shadow-lg: 0 20px 60px rgba(0,0,0,0.45);
+      --shadow-glow: 0 0 40px rgba(10, 132, 255, 0.25);
+    }
+
+    body.light {
+      --bg: #f5f5f7;
+      --bg-2: #ffffff;
+      --card: rgba(255, 255, 255, 0.7);
+      --card-solid: #ffffff;
+      --primary: #007aff;
+      --primary-2: #5856d6;
+      --accent: #32ade6;
+      --text: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --text-tertiary: #aeaeb2;
+      --border: rgba(0, 0, 0, 0.08);
+      --border-strong: rgba(0, 0, 0, 0.14);
+      --hover: rgba(0, 0, 0, 0.04);
+      --sidebar-bg: rgba(255, 255, 255, 0.72);
+    }
+
+    html, body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      letter-spacing: -0.01em;
+    }
+
+    .bg-canvas { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+    .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.55; animation: float 20s infinite ease-in-out; }
+    .orb-1 { width: 500px; height: 500px; background: #0a84ff; top: -150px; left: -100px; animation-delay: 0s; }
+    .orb-2 { width: 400px; height: 400px; background: #bf5af2; bottom: -100px; right: -50px; animation-delay: -5s; }
+    .orb-3 { width: 350px; height: 350px; background: #64d2ff; top: 40%; left: 50%; animation-delay: -10s; opacity: 0.35; }
+    .orb-4 { width: 300px; height: 300px; background: #ff375f; bottom: 20%; left: 20%; animation-delay: -15s; opacity: 0.3; }
+    body.light .orb { opacity: 0.35; }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0,0) scale(1); }
+      33% { transform: translate(60px, -40px) scale(1.1); }
+      66% { transform: translate(-40px, 50px) scale(0.95); }
+    }
+
+    .noise { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+    .app { position: relative; z-index: 2; display: flex; height: 100vh; }
+
+    .sidebar { width: 260px; background: var(--sidebar-bg); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 1.5rem 0.9rem; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+    .logo { display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 0.9rem; margin-bottom: 1.8rem; }
+    .logo-icon { width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #0a84ff, #5e5ce6); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; box-shadow: 0 4px 14px rgba(10, 132, 255, 0.4); }
+    .logo-text { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; background: linear-gradient(135deg, var(--text) 0%, var(--text-secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    .nav-section-label { padding: 0.5rem 1rem; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); margin-top: 0.5rem; }
+
+    .nav-item { display: flex; align-items: center; gap: 0.85rem; padding: 0.7rem 0.9rem; border-radius: var(--radius-sm); color: var(--text-secondary); font-weight: 500; font-size: 0.92rem; cursor: pointer; margin-bottom: 2px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
+    .nav-item i { width: 20px; font-size: 1rem; text-align: center; transition: transform 0.2s; }
+    .nav-item:hover:not(.active) { background: var(--hover); color: var(--text); }
+    .nav-item:hover:not(.active) i { transform: scale(1.1); }
+    .nav-item.active { background: linear-gradient(135deg, rgba(10,132,255,0.18), rgba(94,92,230,0.14)); color: var(--text); font-weight: 600; }
+    .nav-item.active::before { content: ''; position: absolute; left: -0.9rem; top: 50%; transform: translateY(-50%); width: 3px; height: 18px; background: linear-gradient(180deg, var(--primary), var(--primary-2)); border-radius: 0 3px 3px 0; }
+    .nav-badge { margin-left: auto; background: var(--hover); padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); }
+    .nav-item.active .nav-badge { background: rgba(10, 132, 255, 0.2); color: var(--primary); }
+
+    .storage-card { margin-top: auto; margin-left: 0.3rem; margin-right: 0.3rem; margin-bottom: 0.3rem; background: linear-gradient(135deg, rgba(10,132,255,0.12), rgba(94,92,230,0.08)); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.1rem; position: relative; overflow: hidden; }
+    .storage-card::before { content: ''; position: absolute; top: -50%; right: -30%; width: 150px; height: 150px; background: radial-gradient(circle, rgba(10,132,255,0.3), transparent 70%); filter: blur(20px); }
+    .storage-header { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.7rem; position: relative; }
+    .storage-header i { color: var(--primary); }
+    .storage-amount { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.3rem; position: relative; }
+    .storage-amount span { color: var(--text-secondary); font-weight: 500; font-size: 0.85rem; }
+    .progress-bg { height: 6px; background: var(--border); border-radius: 20px; overflow: hidden; margin: 0.5rem 0; position: relative; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 20px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
+    .progress-fill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: shimmer 2s infinite; }
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    .storage-sub { font-size: 0.72rem; color: var(--text-tertiary); position: relative; }
+
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+    .top-bar { padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--sidebar-bg); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%); gap: 1rem; flex-wrap: wrap; }
+
+    .page-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 0.6rem; }
+    .page-title .count { font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); background: var(--hover); padding: 0.2rem 0.7rem; border-radius: 20px; }
+
+    .search-wrapper { display: flex; align-items: center; background: var(--hover); border: 1px solid var(--border); border-radius: 12px; padding: 0.55rem 1rem; width: 320px; transition: all 0.2s; }
+    .search-wrapper:focus-within { border-color: var(--primary); background: var(--card); box-shadow: 0 0 0 3px rgba(10,132,255,0.15); }
+    .search-wrapper i { color: var(--text-tertiary); margin-right: 0.6rem; font-size: 0.9rem; }
+    .search-wrapper input { background: transparent; border: none; color: var(--text); width: 100%; outline: none; font-size: 0.9rem; font-family: inherit; }
+    .search-wrapper input::placeholder { color: var(--text-tertiary); }
+
+    .actions { display: flex; align-items: center; gap: 0.6rem; }
+    .icon-btn { width: 38px; height: 38px; border-radius: 10px; background: var(--hover); border: 1px solid var(--border); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 0.95rem; }
+    .icon-btn:hover { background: var(--border); transform: translateY(-1px); }
+    .sort-select { background: var(--hover); color: var(--text); border: 1px solid var(--border); padding: 0.55rem 0.9rem; border-radius: 10px; font-family: inherit; font-size: 0.85rem; font-weight: 500; cursor: pointer; outline: none; }
+
+    .content { flex: 1; padding: 1.8rem 2rem; overflow-y: auto; overflow-x: hidden; }
+    .content::-webkit-scrollbar { width: 8px; }
+    .content::-webkit-scrollbar-track { background: transparent; }
+    .content::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
+
+    .upload-area { position: relative; border-radius: var(--radius-xl); padding: 2.2rem; text-align: center; background: var(--card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--border); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 2rem; cursor: pointer; overflow: hidden; }
+    .upload-area::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(10,132,255,0.08), rgba(191,90,242,0.05), rgba(100,210,255,0.08)); opacity: 0; transition: opacity 0.3s; }
+    .upload-area:hover::before { opacity: 1; }
+    .upload-area.drag-over { border-color: var(--primary); transform: scale(1.01); box-shadow: var(--shadow-glow); }
+    .upload-area.drag-over::before { opacity: 1; }
+
+    .upload-icon-wrap { width: 72px; height: 72px; border-radius: 22px; background: linear-gradient(135deg, rgba(10,132,255,0.2), rgba(94,92,230,0.15)); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; position: relative; z-index: 1; border: 1px solid rgba(10,132,255,0.2); }
+    .upload-icon-wrap i { font-size: 1.8rem; background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .upload-area h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 0.3rem; position: relative; z-index: 1; }
+    .upload-area p { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 1rem; position: relative; z-index: 1; }
+    .upload-btn { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: white; border: none; padding: 0.75rem 1.8rem; border-radius: 30px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s; position: relative; z-index: 1; font-family: inherit; box-shadow: 0 4px 14px rgba(10, 132, 255, 0.35); }
+    .upload-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(10, 132, 255, 0.45); }
+
+    .progress-modal { background: var(--card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 1rem 1.3rem; border-radius: var(--radius-md); border: 1px solid var(--border); display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; animation: slideDown 0.3s ease; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .progress-modal .file-icon-mini { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--primary-2)); display: flex; align-items: center; justify-content: center; color: white; font-size: 0.95rem; flex-shrink: 0; }
+    .progress-info { flex: 1; min-width: 0; }
+    .progress-name { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0.3rem; }
+    .progress-bar-wrap { height: 4px; background: var(--border); border-radius: 20px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 20px; transition: width 0.2s; }
+    .progress-percent { font-size: 0.85rem; font-weight: 600; color: var(--primary); min-width: 45px; text-align: right; }
+
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; }
+    .section-title { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); }
+
+    .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+
+    .file-card { background: var(--card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: var(--radius-lg); padding: 1.2rem; border: 1px solid var(--border); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; gap: 0.8rem; cursor: pointer; position: relative; overflow: hidden; animation: cardIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .file-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--type-color, var(--primary)); opacity: 0; transition: opacity 0.2s; }
+    .file-card:hover { transform: translateY(-4px); border-color: var(--border-strong); box-shadow: var(--shadow-md); }
+    .file-card:hover::before { opacity: 1; }
+
+    .file-card-top { display: flex; align-items: flex-start; gap: 0.8rem; }
+    .file-icon-box { width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; background: var(--type-bg, rgba(10,132,255,0.15)); color: var(--type-color, var(--primary)); border: 1px solid var(--type-border, rgba(10,132,255,0.2)); }
+    .file-info { flex: 1; min-width: 0; }
+    .file-name { font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0.2rem; letter-spacing: -0.01em; }
+    .file-meta { font-size: 0.78rem; color: var(--text-secondary); display: flex; gap: 0.5rem; align-items: center; }
+    .file-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-tertiary); }
+
+    .card-actions { display: flex; gap: 0.3rem; padding-top: 0.6rem; border-top: 1px solid var(--border); margin-top: auto; }
+    .card-action-btn { flex: 1; background: transparent; border: none; color: var(--text-secondary); padding: 0.5rem; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; }
+    .card-action-btn span { font-size: 0.75rem; font-weight: 500; }
+    .card-action-btn:hover { background: var(--hover); color: var(--primary); }
+    .card-action-btn.danger:hover { background: rgba(255, 69, 58, 0.1); color: var(--danger); }
+
+    .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-secondary); }
+    .empty-illustration { width: 140px; height: 140px; margin: 0 auto 1.5rem; position: relative; }
+    .empty-illustration .cloud { width: 140px; height: 100px; background: linear-gradient(135deg, rgba(10,132,255,0.15), rgba(94,92,230,0.1)); border-radius: 50px; position: relative; border: 2px dashed var(--border-strong); }
+    .empty-illustration .cloud::before { content: ''; position: absolute; top: -30px; left: 30px; width: 60px; height: 60px; background: linear-gradient(135deg, rgba(10,132,255,0.2), rgba(94,92,230,0.15)); border-radius: 50%; border: 2px dashed var(--border-strong); }
+    .empty-illustration .cloud::after { content: ''; position: absolute; top: -15px; right: 20px; width: 45px; height: 45px; background: linear-gradient(135deg, rgba(100,210,255,0.2), rgba(10,132,255,0.15)); border-radius: 50%; border: 2px dashed var(--border-strong); }
+    .empty-state h3 { font-size: 1.2rem; font-weight: 600; color: var(--text); margin-bottom: 0.4rem; }
+    .empty-state p { font-size: 0.9rem; max-width: 320px; margin: 0 auto; }
+
+    .toast { position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--card-solid); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid var(--border-strong); padding: 0.8rem 1.3rem; border-radius: 14px; box-shadow: var(--shadow-lg); z-index: 9999; font-weight: 500; font-size: 0.9rem; display: flex; align-items: center; gap: 0.7rem; animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    .toast.hide { animation: toastOut 0.3s ease forwards; }
+    @keyframes toastIn { from { transform: translateX(-50%) translateY(-100px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+    @keyframes toastOut { to { transform: translateX(-50%) translateY(-100px); opacity: 0; } }
+    .toast-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .toast.success .toast-icon { background: rgba(48, 209, 88, 0.15); color: var(--success); }
+    .toast.error .toast-icon { background: rgba(255, 69, 58, 0.15); color: var(--danger); }
+    .toast.info .toast-icon { background: rgba(10, 132, 255, 0.15); color: var(--primary); }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.2s ease; padding: 1rem; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-content { background: var(--card-solid); border: 1px solid var(--border-strong); border-radius: var(--radius-xl); max-width: 680px; width: 100%; max-height: 85vh; padding: 1.5rem; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 1rem; animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden; }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; }
+    .modal-title { font-size: 1.1rem; font-weight: 600; letter-spacing: -0.01em; }
+    .modal-close { width: 32px; height: 32px; border-radius: 50%; background: var(--hover); border: none; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .modal-close:hover { background: var(--border); transform: rotate(90deg); }
+
+    .preview-wrap { background: var(--bg); border-radius: var(--radius-md); padding: 1rem; display: flex; align-items: center; justify-content: center; min-height: 200px; max-height: 55vh; overflow: auto; }
+    .preview-wrap img, .preview-wrap video { max-width: 100%; max-height: 50vh; border-radius: 12px; object-fit: contain; }
+    .preview-wrap audio { width: 100%; }
+    .preview-placeholder { text-align: center; padding: 2rem; }
+    .preview-placeholder i { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
+
+    .file-details { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; padding: 1rem; background: var(--hover); border-radius: var(--radius-md); }
+    .detail-item { display: flex; flex-direction: column; gap: 0.2rem; }
+    .detail-label { font-size: 0.72rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .detail-value { font-size: 0.9rem; font-weight: 500; }
+
+    .share-link-box { display: flex; gap: 0.5rem; }
+    .share-link-box input { flex: 1; background: var(--hover); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem 1rem; color: var(--text); font-family: inherit; font-size: 0.85rem; outline: none; }
+    .share-link-box input:focus { border-color: var(--primary); }
+    .share-link-box button { background: linear-gradient(135deg, var(--primary), var(--primary-2)); border: none; color: white; padding: 0 1.2rem; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.85rem; font-family: inherit; display: flex; align-items: center; gap: 0.4rem; transition: all 0.2s; }
+    .share-link-box button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
+
+    .hidden { display: none !important; }
+
+    .confirm-modal .modal-content { max-width: 400px; }
+    .confirm-body { text-align: center; padding: 1rem 0; }
+    .confirm-icon { width: 60px; height: 60px; border-radius: 50%; background: rgba(255, 69, 58, 0.12); color: var(--danger); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 1rem; }
+    .confirm-body h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .confirm-body p { color: var(--text-secondary); font-size: 0.9rem; }
+    .confirm-actions { display: flex; gap: 0.6rem; margin-top: 0.5rem; }
+    .confirm-actions button { flex: 1; padding: 0.75rem; border-radius: 12px; font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: inherit; transition: all 0.2s; border: 1px solid var(--border); }
+    .btn-cancel { background: var(--hover); color: var(--text); }
+    .btn-cancel:hover { background: var(--border); }
+    .btn-danger { background: var(--danger); color: white; border-color: var(--danger) !important; }
+    .btn-danger:hover { background: #d63630; transform: translateY(-1px); }
+
+    @media (max-width: 900px) {
+      .sidebar { width: 72px; padding: 1rem 0.4rem; }
+      .nav-item span, .logo-text, .nav-section-label, .storage-card .storage-sub, .storage-card .storage-amount span, .nav-badge { display: none; }
+      .storage-card { padding: 0.7rem; }
+      .storage-amount { font-size: 1rem; }
+      .search-wrapper { width: 180px; }
+      .page-title { font-size: 1.2rem; }
+    }
+    @media (max-width: 600px) {
+      .top-bar { padding: 0.8rem 1rem; }
+      .content { padding: 1.2rem 1rem; }
+      .search-wrapper { display: none; }
+      .file-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.8rem; }
+      .file-card { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-canvas">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+  </div>
+  <div class="noise"></div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <div class="logo-icon"><i class="fas fa-cloud"></i></div>
+        <div class="logo-text">TeleDrive</div>
+      </div>
+
+      <div class="nav-section-label">Library</div>
+      <nav>
+        <div class="nav-item active" data-view="all">
+          <i class="fas fa-folder"></i>
+          <span>All Files</span>
+          <span class="nav-badge" id="badgeAll">0</span>
+        </div>
+        <div class="nav-item" data-view="images">
+          <i class="fas fa-image"></i>
+          <span>Images</span>
+          <span class="nav-badge" id="badgeImages">0</span>
+        </div>
+        <div class="nav-item" data-view="videos">
+          <i class="fas fa-video"></i>
+          <span>Videos</span>
+          <span class="nav-badge" id="badgeVideos">0</span>
+        </div>
+        <div class="nav-item" data-view="documents">
+          <i class="fas fa-file-alt"></i>
+          <span>Documents</span>
+          <span class="nav-badge" id="badgeDocs">0</span>
+        </div>
+        <div class="nav-item" data-view="audio">
+          <i class="fas fa-music"></i>
+          <span>Audio</span>
+          <span class="nav-badge" id="badgeAudio">0</span>
+        </div>
+      </nav>
+
+      <div class="storage-card">
+        <div class="storage-header">
+          <i class="fas fa-bolt"></i>
+          <span>Cloud Storage</span>
+        </div>
+        <div class="storage-amount">
+          <span id="storageUsed">0 MB</span>
+          <span>/ Unlimited</span>
+        </div>
+        <div class="progress-bg"><div class="progress-fill" id="storageBar"></div></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="top-bar">
+        <div class="page-title">
+          <span id="viewTitle">All Files</span>
+          <span class="count" id="fileCount">0</span>
+        </div>
+        <div class="search-wrapper">
+          <i class="fas fa-search"></i>
+          <input type="text" id="searchInput" placeholder="Search files...">
+        </div>
+        <div class="actions">
+          <select class="sort-select" id="sortSelect">
+            <option value="date-desc">Newest</option>
+            <option value="date-asc">Oldest</option>
+            <option value="name-asc">Name A–Z</option>
+            <option value="name-desc">Name Z–A</option>
+            <option value="size-desc">Largest</option>
+            <option value="size-asc">Smallest</option>
+          </select>
+          <button class="icon-btn" id="themeToggle" title="Toggle theme">
+            <i class="fas fa-moon"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="upload-area" id="dropZone">
+          <div class="upload-icon-wrap">
+            <i class="fas fa-cloud-upload-alt"></i>
+          </div>
+          <h3>Drop files to upload</h3>
+          <p>or click to browse</p>
+          <input type="file" id="fileInput" multiple hidden>
+          <button class="upload-btn" id="browseBtn"><i class="fas fa-plus"></i> Choose Files</button>
+        </div>
+
+        <div id="progressContainer" class="progress-modal hidden">
+          <div class="file-icon-mini"><i class="fas fa-arrow-up"></i></div>
+          <div class="progress-info">
+            <div class="progress-name" id="progressText">Uploading...</div>
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBarFill"></div></div>
+          </div>
+          <div class="progress-percent" id="progressPercent">0%</div>
+        </div>
+
+        <div class="section-header">
+          <div class="section-title" id="sectionLabel">Telegram Saved Messages</div>
+        </div>
+
+        <div class="file-grid" id="fileGrid"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Preview Modal -->
+  <div id="previewModal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="previewTitle">File Preview</div>
+        <button class="modal-close" id="closePreviewBtn"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="preview-wrap" id="previewContent"></div>
+      <div class="file-details" id="previewDetails"></div>
+      <div class="share-link-box">
+        <input type="text" id="shareUrlInput" readonly placeholder="Download this file">
+        <button id="copyShareBtn"><i class="fas fa-download"></i> Download</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const SETTINGS_KEY = 'teledrive_settings';
+
+      const $ = id => document.getElementById(id);
+      const fileGrid = $('fileGrid');
+      const searchInput = $('searchInput');
+      const sortSelect = $('sortSelect');
+      const dropZone = $('dropZone');
+      const fileInput = $('fileInput');
+      const browseBtn = $('browseBtn');
+      const progressContainer = $('progressContainer');
+      const progressText = $('progressText');
+      const progressBarFill = $('progressBarFill');
+      const progressPercent = $('progressPercent');
+      const themeToggle = $('themeToggle');
+      const storageBar = $('storageBar');
+      const storageUsed = $('storageUsed');
+      const fileCount = $('fileCount');
+      const viewTitle = $('viewTitle');
+      const sectionLabel = $('sectionLabel');
+      const previewModal = $('previewModal');
+      const closePreviewBtn = $('closePreviewBtn');
+      const previewContent = $('previewContent');
+      const previewTitle = $('previewTitle');
+      const previewDetails = $('previewDetails');
+      const shareUrlInput = $('shareUrlInput');
+      const copyShareBtn = $('copyShareBtn');
+      const navItems = document.querySelectorAll('.nav-item');
+
+      let currentView = 'all';
+      let filesMetadata = [];
+      let currentPreviewFileId = null;
+
+      const TYPE_CONFIG = {
+        image: { icon: 'fa-image', color: '#ff375f', bg: 'rgba(255, 55, 95, 0.15)', border: 'rgba(255, 55, 95, 0.25)' },
+        video: { icon: 'fa-video', color: '#bf5af2', bg: 'rgba(191, 90, 242, 0.15)', border: 'rgba(191, 90, 242, 0.25)' },
+        audio: { icon: 'fa-music', color: '#ff9f0a', bg: 'rgba(255, 159, 10, 0.15)', border: 'rgba(255, 159, 10, 0.25)' },
+        pdf:   { icon: 'fa-file-pdf', color: '#ff453a', bg: 'rgba(255, 69, 58, 0.15)', border: 'rgba(255, 69, 58, 0.25)' },
+        archive: { icon: 'fa-file-zipper', color: '#ffd60a', bg: 'rgba(255, 214, 10, 0.15)', border: 'rgba(255, 214, 10, 0.25)' },
+        doc:   { icon: 'fa-file-lines', color: '#0a84ff', bg: 'rgba(10, 132, 255, 0.15)', border: 'rgba(10, 132, 255, 0.25)' },
+        default: { icon: 'fa-file', color: '#8e8e93', bg: 'rgba(142, 142, 147, 0.15)', border: 'rgba(142, 142, 147, 0.25)' }
+      };
+
+      function getTypeConfig(mimeType) {
+        if (!mimeType) return TYPE_CONFIG.default;
+        if (mimeType.startsWith('image/')) return TYPE_CONFIG.image;
+        if (mimeType.startsWith('video/')) return TYPE_CONFIG.video;
+        if (mimeType.startsWith('audio/')) return TYPE_CONFIG.audio;
+        if (mimeType.includes('pdf')) return TYPE_CONFIG.pdf;
+        if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('tar') || mimeType.includes('7z')) return TYPE_CONFIG.archive;
+        if (mimeType.includes('document') || mimeType.includes('text') || mimeType.includes('spreadsheet') || mimeType.includes('presentation')) return TYPE_CONFIG.doc;
+        return TYPE_CONFIG.default;
+      }
+
+      function formatBytes(bytes) {
+        if (!bytes) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      }
+
+      function formatDate(dateStr) {
+        const d = new Date(dateStr);
+        const now = new Date();
+        const diff = (now - d) / 1000;
+        if (diff < 60) return 'Just now';
+        if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+        if (diff < 604800) return Math.floor(diff/86400) + 'd ago';
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, character => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        })[character]);
+      }
+
+      function updateStorageUI() {
+        const totalBytes = filesMetadata.reduce((acc, f) => acc + (f.size || 0), 0);
+        const usedMB = totalBytes / (1024*1024);
+        storageUsed.textContent = usedMB >= 1024 ? (usedMB/1024).toFixed(2) + ' GB' : usedMB.toFixed(1) + ' MB';
+        const percent = Math.min(100, (totalBytes / (2*1024*1024*1024)) * 100);
+        storageBar.style.width = percent + '%';
+        fileCount.textContent = filesMetadata.length;
+
+        $('badgeAll').textContent = filesMetadata.length;
+        $('badgeImages').textContent = filesMetadata.filter(f => f.type && f.type.startsWith('image/')).length;
+        $('badgeVideos').textContent = filesMetadata.filter(f => f.type && f.type.startsWith('video/')).length;
+        $('badgeDocs').textContent = filesMetadata.filter(f => f.type && (f.type.includes('pdf') || f.type.includes('document') || f.type.includes('text') || f.type.includes('spreadsheet'))).length;
+        $('badgeAudio').textContent = filesMetadata.filter(f => f.type && f.type.startsWith('audio/')).length;
+      }
+
+      function showToast(msg, type = 'info') {
+        document.querySelectorAll('.toast').forEach(t => t.remove());
+        const icons = { success: 'fa-check', error: 'fa-xmark', info: 'fa-info' };
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<div class="toast-icon"><i class="fas ${icons[type]}"></i></div><span></span>`;
+        toast.querySelector('span').textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.classList.add('hide');
+          setTimeout(() => toast.remove(), 300);
+        }, 2800);
+      }
+
+      function openPreview(file) {
+        previewModal.classList.remove('hidden');
+        previewTitle.textContent = file.name;
+        currentPreviewFileId = file.file_id;
+        previewContent.innerHTML = '';
+        const cfg = getTypeConfig(file.type);
+        const contentUrl = `/api/files/${encodeURIComponent(file.file_id)}/content`;
+        const mediaType = (file.type || '').toLowerCase();
+        let preview;
+        if (mediaType.startsWith('image/')) {
+          preview = document.createElement('img');
+          preview.alt = file.name;
+          preview.src = contentUrl;
+        } else if (mediaType.startsWith('video/')) {
+          preview = document.createElement('video');
+          preview.controls = true;
+          preview.src = contentUrl;
+        } else if (mediaType.startsWith('audio/')) {
+          preview = document.createElement('audio');
+          preview.controls = true;
+          preview.src = contentUrl;
+        } else if (mediaType === 'application/pdf') {
+          preview = document.createElement('iframe');
+          preview.title = file.name;
+          preview.src = contentUrl;
+          preview.style.cssText = 'width:100%;height:50vh;border:0';
+        }
+
+        if (preview) {
+          previewContent.appendChild(preview);
+        } else {
+          previewContent.innerHTML = `<div class="preview-placeholder"><i class="fas ${cfg.icon}" style="color:${cfg.color}"></i><p style="color:var(--text-secondary)">Preview is not available for this file type. Download it to open.</p></div>`;
+        }
+
+        previewDetails.textContent = '';
+        [
+          ['Name', file.name],
+          ['Size', formatBytes(file.size)],
+          ['Type', file.type || 'Unknown'],
+          ['Uploaded', formatDate(file.date)]
+        ].forEach(([label, value]) => {
+          const item = document.createElement('div');
+          item.className = 'detail-item';
+          const labelElement = document.createElement('span');
+          labelElement.className = 'detail-label';
+          labelElement.textContent = label;
+          const valueElement = document.createElement('span');
+          valueElement.className = 'detail-value';
+          valueElement.textContent = value;
+          item.append(labelElement, valueElement);
+          previewDetails.appendChild(item);
+        });
+        shareUrlInput.value = file.name;
+      }
+
+      closePreviewBtn.addEventListener('click', () => previewModal.classList.add('hidden'));
+      previewModal.addEventListener('click', (e) => {
+        if (e.target === previewModal) previewModal.classList.add('hidden');
+      });
+
+      copyShareBtn.addEventListener('click', () => {
+        if (currentPreviewFileId) {
+          window.location.href = `/api/files/${encodeURIComponent(currentPreviewFileId)}/content?download=1`;
+        }
+      });
+
+      function renderFiles() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const sort = sortSelect.value;
+        let filtered = [...filesMetadata];
+
+        if (currentView === 'images') filtered = filtered.filter(f => f.type && f.type.startsWith('image/'));
+        else if (currentView === 'videos') filtered = filtered.filter(f => f.type && f.type.startsWith('video/'));
+        else if (currentView === 'audio') filtered = filtered.filter(f => f.type && f.type.startsWith('audio/'));
+        else if (currentView === 'documents') filtered = filtered.filter(f => f.type && (f.type.includes('pdf') || f.type.includes('document') || f.type.includes('text') || f.type.includes('spreadsheet')));
+
+        if (searchTerm) filtered = filtered.filter(f => f.name.toLowerCase().includes(searchTerm));
+
+        if (sort === 'date-desc') filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
+        else if (sort === 'date-asc') filtered.sort((a,b) => new Date(a.date) - new Date(b.date));
+        else if (sort === 'name-asc') filtered.sort((a,b) => a.name.localeCompare(b.name));
+        else if (sort === 'name-desc') filtered.sort((a,b) => b.name.localeCompare(a.name));
+        else if (sort === 'size-desc') filtered.sort((a,b) => b.size - a.size);
+        else if (sort === 'size-asc') filtered.sort((a,b) => a.size - b.size);
+
+        fileGrid.innerHTML = '';
+
+        if (filtered.length === 0) {
+          fileGrid.innerHTML = `
+            <div class="empty-state" style="grid-column: 1/-1;">
+              <div class="empty-illustration"><div class="cloud"></div></div>
+              <h3>${searchTerm ? 'No results found' : 'No files yet'}</h3>
+              <p>${searchTerm ? 'Try a different search term' : 'Upload files to see them here. Everything is stored securely on Telegram.'}</p>
+            </div>
+          `;
+          updateStorageUI();
+          return;
+        }
+
+        filtered.forEach((file, idx) => {
+          const cfg = getTypeConfig(file.type);
+          const card = document.createElement('div');
+          card.className = 'file-card';
+          card.style.setProperty('--type-color', cfg.color);
+          card.style.setProperty('--type-bg', cfg.bg);
+          card.style.setProperty('--type-border', cfg.border);
+          card.style.animationDelay = (idx * 0.03) + 's';
+          card.innerHTML = `
+            <div class="file-card-top">
+              <div class="file-icon-box"><i class="fas ${cfg.icon}"></i></div>
+              <div class="file-info">
+                <div class="file-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
+                <div class="file-meta">
+                  <span>${formatBytes(file.size)}</span>
+                  <span class="dot"></span>
+                  <span>${formatDate(file.date)}</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="card-action-btn" data-action="preview" data-id="${file.file_id}" title="Preview"><i class="fas fa-eye"></i><span>View</span></button>
+              <button class="card-action-btn" data-action="download" data-id="${file.file_id}" title="Download"><i class="fas fa-download"></i><span>Download</span></button>
+            </div>
+          `;
+          fileGrid.appendChild(card);
+        });
+
+        attachCardEvents();
+        updateStorageUI();
+      }
+
+      function attachCardEvents() {
+        document.querySelectorAll('.card-actions .card-action-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const action = btn.dataset.action;
+            const fileId = btn.dataset.id;
+
+            if (action === 'preview') {
+              const file = filesMetadata.find(f => f.file_id === fileId);
+              if (file) openPreview(file);
+            }
+            else if (action === 'download') {
+              window.location.href = `/api/files/${encodeURIComponent(fileId)}/content?download=1`;
+            }
+          });
+        });
+      }
+
+      async function loadFiles() {
+        const loadedFiles = [];
+        let offsetId = null;
+
+        do {
+          const query = offsetId === null ? '' : `?offsetId=${encodeURIComponent(offsetId)}`;
+          const response = await fetch(`/api/files${query}`);
+          const result = await response.json();
+          if (!response.ok || !result.success) {
+            throw new Error(result.message || `HTTP ${response.status}`);
+          }
+          loadedFiles.push(...result.files);
+          offsetId = result.nextOffsetId;
+        } while (offsetId !== null);
+
+        filesMetadata = loadedFiles;
+        renderFiles();
+      }
+
+      async function uploadFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', '/upload');
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              const percent = Math.round((e.loaded / e.total) * 100);
+              progressBarFill.style.width = percent + '%';
+              progressPercent.textContent = percent + '%';
+              progressText.textContent = `Uploading ${file.name} (${percent}%)`;
+            }
+          };
+          xhr.upload.onload = () => {
+            progressPercent.textContent = '100%';
+            progressText.textContent = `Saving ${file.name} to Telegram...`;
+          };
+          xhr.onload = () => {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              if (xhr.status >= 200 && xhr.status < 300 && response.success) resolve(response);
+              else reject(new Error(response.message || `HTTP ${xhr.status}`));
+            } catch (error) {
+              reject(error);
+            }
+          };
+          xhr.onerror = () => reject(new Error('Network error'));
+          xhr.send(formData);
+        });
+      }
+
+      async function handleFiles(files) {
+        progressContainer.classList.remove('hidden');
+        for (let file of files) {
+          try {
+            progressBarFill.style.width = '0%';
+            progressPercent.textContent = '0%';
+            progressText.textContent = `Uploading ${file.name}...`;
+            
+            await uploadFile(file);
+            showToast(`${file.name} uploaded to Telegram and saved on this server`, 'success');
+          } catch (err) {
+            showToast(`Failed: ${file.name} — ${err.message}`, 'error');
+          }
+        }
+        progressContainer.classList.add('hidden');
+        try {
+          await loadFiles();
+        } catch (error) {
+          showToast(`Could not refresh file list: ${error.message}`, 'error');
+        }
+        fileInput.value = '';
+      }
+
+      browseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fileInput.click();
+      });
+      dropZone.addEventListener('click', (e) => {
+        if (e.target === dropZone || e.target.tagName === 'H3' || e.target.tagName === 'P') {
+          fileInput.click();
+        }
+      });
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) handleFiles(e.target.files);
+      });
+
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+      });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+      });
+
+      searchInput.addEventListener('input', renderFiles);
+      sortSelect.addEventListener('change', renderFiles);
+
+      navItems.forEach(item => {
+        item.addEventListener('click', () => {
+          navItems.forEach(n => n.classList.remove('active'));
+          item.classList.add('active');
+          currentView = item.dataset.view;
+          const title = item.querySelector('span').innerText.trim();
+          viewTitle.textContent = title;
+          sectionLabel.textContent = title;
+          renderFiles();
+        });
+      });
+
+      function setTheme(mode) {
+        if (mode === 'light') {
+          document.body.classList.add('light');
+          themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        } else {
+          document.body.classList.remove('light');
+          themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+        }
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify({theme: mode}));
+      }
+
+      themeToggle.addEventListener('click', () => {
+        const isLight = document.body.classList.contains('light');
+        setTheme(isLight ? 'dark' : 'light');
+      });
+
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      setTheme(settings.theme || 'dark');
+      renderFiles();
+      loadFiles().catch(error => showToast(`Could not load Telegram files: ${error.message}`, 'error'));
+    })();
+  </script>
+</body>
+</html>
