@@ -315,5 +315,5 @@ app.get('/login.html', (req, res) => res.sendFile(path.join(__dirname, 'login.ht
 app.get('/verify.html', (req, res) => res.sendFile(path.join(__dirname, 'verify.html')));
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`সার্ভার চালু আছে: http://localhost:${PORT}`);
+    console.log(`সার্ভার চালু আছে: http://0.0.0.0:${PORT}`);
 });
