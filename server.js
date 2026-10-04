@@ -7,7 +7,7 @@ const { TelegramClient } = require('telegram');
 const { StoreSession } = require('telegram/sessions');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 const TEMP_DIR = path.join(UPLOAD_DIR, '.tmp');
 
@@ -314,6 +314,6 @@ app.get('/', (req, res) => {
 app.get('/login.html', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
 app.get('/verify.html', (req, res) => res.sendFile(path.join(__dirname, 'verify.html')));
 
-app.listen(PORT, '127.0.0.1', () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`সার্ভার চালু আছে: http://localhost:${PORT}`);
 });
